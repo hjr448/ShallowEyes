@@ -1,6 +1,5 @@
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "sm401_main.h"
@@ -80,7 +79,7 @@ FILE* open_and_seek_dat(unsigned short fileindex, sm_file* smf) {
 	//ds_writed(0xbce7, end - start);
 	smf->len=end-start;
 	smf->len_=end-start;
-fprintf(stdout,"open and seek %d, Start: %x, Länge %x\n",fileindex,start,end-start);
+fprintf(stdout,"open and seek %d, Start: %x, Länge %x/%d\n",fileindex,start,end-start,end-start);
 	return smf->fd;
 }
 
@@ -121,28 +120,6 @@ fprintf(stdout,"read %x\n",readsize);
 	return fread(buf, 1, readsize, smf->fd);
 }
 
-
-void split_textbuffer(Bit8u **dst, Bit8u *src, Bit32u len)
-{
-	Bit32u i = 0;
-	Bit32u j = 0;
-
-	//host_writed(dst, src);
-	//dst += 4;
-	dst[0]=src;
-	j++;
-	
-	for (; i != len; src++, i++) {
-		/* continue if not the end of the string */
-		if (src[0] != 0)
-			continue;
-		/* write the adress of the next string */
-		dst[j]=src+1;
-		j++;
-	}
-fprintf(stdout,"split, Anzahl: %x, BufferSize %x\n",j,j*4);
-
-}
 
 signed int process_nvf(struct nvf_desc *nvf) {
 
@@ -260,4 +237,29 @@ signed int process_nvf(struct nvf_desc *nvf) {
 
 	return retval;
 }
+
+
+//versdchoben in seg 029:
+//void sub_195DD(signed char icons, ...){
+/*
+	unsigned short i;
+	va_list arguments;
+
+	
+	va_start(arguments, icons);
+	for (i=0;i<icons;i++){
+		byte_30CF8[i] = va_arg(arguments, signed short);
+	}
+	while(i<9){
+		byte_30CF8[i]= -1;
+		i++;
+	}
+
+	if (byte_27805==0)
+		draw_icons();
+	*/
+//}
+
+
+
 

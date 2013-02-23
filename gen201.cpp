@@ -10,6 +10,7 @@
 #include "gen201.h"
 
 #include "sm401_seg002.h"
+#include "sm401_seg007.h"
 #include "sm401_seg009.h"
 #include "hero.h"
 #include "gen201_vars.h"
@@ -475,7 +476,7 @@ void do_gen()
 		//action_table = (unsigned char*)action_page[gen_page];
 		//action_table = NULL;
 		in_key_ext = sm_KeyPressed();
-		sm_GetMouse(&sm_mouse);//mouse anstelle pfeiltasten fehlt
+		sm_GetMouse(&sm_mouse);
 		wait_for_tick();
 	
 		if (sm_mouse.event==MOUSE_LEFT_DOWN){
@@ -779,12 +780,12 @@ void gen_read_common_files()
 }
 void gen_init_colors()
 {
-	sm_set_palette((unsigned char*)&col_black, 0x00, 1);
-	sm_set_palette((unsigned char*)&col_white, 0xff, 1);
-	sm_set_palette((unsigned char*)col_popup, 0xd8, 8);
-	sm_set_palette((unsigned char*)col_misc, 0xc8, 3);
-	sm_set_palette((unsigned char*)pal_genbg, 0x40, 0x20);
-	sm_set_palette((unsigned char*)pal_heads, 0x20, 0x20);
+	sm_set_palette(PAL_BL, 0x00, 1);
+	sm_set_palette(PAL_WH, 0xff, 1);
+	sm_set_palette(PAL_POPUP, 0xd8, 8);
+	sm_set_palette(PAL_MISC, 0xc8, 3);
+	sm_set_palette(PAL_GENBG, 0x40, 0x20);
+	sm_set_palette(PAL_HEADS, 0x20, 0x20);
 	//sm_set_textcolor(0xff, 0x0);
 }
 void gen_split_textbuffer(char **dst, char *src, unsigned int len)
@@ -2354,7 +2355,7 @@ void gen_select_skill()
 		GUI_gen.shift_x = 0;
 
 	} while (group != -1);
-}
+}/*
 unsigned short is_in_word_array(unsigned short val, unsigned char *p)
 {
 	while (readw(p) != 0) {
@@ -2363,7 +2364,7 @@ unsigned short is_in_word_array(unsigned short val, unsigned char *p)
 			return 1;
 	}
 	return 0;
-}
+}*/
 void gen_inc_spell(unsigned short spell)
 {
 	unsigned short max_incs = 1;

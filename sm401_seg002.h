@@ -1,6 +1,7 @@
 #ifndef sm401_seg002_h
 #define sm401_seg002_h
 
+#include <stdio.h>
 
 static const unsigned short KEY_ESC = 27;//0x01;
 static const unsigned short KEY_1 = 49;//0x02;
@@ -49,7 +50,6 @@ struct nvf_desc {
 
 FILE* load_archive_file(unsigned short index, sm_file* smf);
 Bit16u read_archive_file( sm_file* smf, Bit8u *buf, Bit16u readsize);
-void split_textbuffer(Bit8u **dst, Bit8u *src, Bit32u len);
 signed int process_nvf(struct nvf_desc *nvf);
 
 

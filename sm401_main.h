@@ -1,7 +1,7 @@
 #ifndef sm401_main_h
 #define sm401_main_h
 
-
+#include <stdlib.h>
 
 
 typedef         double		Real64;
@@ -50,8 +50,21 @@ static inline void writed(unsigned char*  off,unsigned int val) {
 	off[3]=(unsigned char)(val >> 24);
 }
 
+struct struct_globvars{
+public:
+	Bit16u GameMode; //word_20FC3
+	Bit16u location;
+	Bit16u traveling;
+	Bit16u current_town;
+	Bit16u typeindex;
+	Bit16u dungeon_index;
+	Bit16u direction;
+	Bit16u current_ani;
+	Bit16u ani_x;
+	Bit16u ani_y;
+};
 
-
+void do_Temple();
 
 
 

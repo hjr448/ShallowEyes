@@ -4,8 +4,8 @@
 
 #include "sm401_main.h"
 #include "sm401_seg002.h"
-#include "sm401_GUI.h"
 #include "sm401_video.h"
+#include "sm401_pals.h"
 
 
 #ifndef WIN32
@@ -78,6 +78,7 @@ struct_color gen_palette[256]; //di dsa-Palette, um Farben zu übersetzen
 unsigned char mat[320][200];   //temporärer Speicher für die originale Pixelmatrix
 char name[9];
 irr::video::IImage *dataImage; //hier kommt das Bild hinein, bevor es in dit Textur umgewandelt wird
+irr::video::IImage *dataImage24; //hier kommt das Bild hinein, bevor es in dit Textur umgewandelt wird
 irr::video::IImage *dataImage32; //hier kommt das Bild hinein, bevor es in dit Textur umgewandelt wird
 irr::video::IImage *dataImage128; //hier kommt das Bild hinein, bevor es in dit Textur umgewandelt wird
 irr::video::SColor	fi_color;
@@ -94,6 +95,15 @@ struct_image smi_flecha;
 struct_image smi_dmenge[14];
 struct_image smi_page[11];
 
+struct_image smi_index[256];
+struct_image smi_icons[9];
+irr::video::ITexture* smt_icons[55];
+irr::video::ITexture* smt_bicons[9];
+struct_image smi_compass;
+struct_image smi_anis[36];
+struct_image smi_tempicon[13];
+struct_text  sm_loc_line;
+
 
 void sm_init_video(){
 	device = createDevice( video::EDT_SOFTWARE, core::dimension2d<u32>(dst_w,dst_h), 16, false, false, false, &receiver);
@@ -107,6 +117,7 @@ void sm_init_video(){
         skin->setFont(font);
 	skin->setColor (gui::EGDC_BUTTON_TEXT, video::SColor(255,255,255,255));
 	dataImage   = driver->createImage(irr::video::ECF_A8R8G8B8 ,core::dimension2d<u32> (  dst_w,  dst_h));	
+	dataImage24 = driver->createImage(irr::video::ECF_A8R8G8B8 ,core::dimension2d<u32> ( 24*f_w, 24*f_h));	
 	dataImage32 = driver->createImage(irr::video::ECF_A8R8G8B8 ,core::dimension2d<u32> ( 32*f_w, 32*f_h));	
 	dataImage128= driver->createImage(irr::video::ECF_A8R8G8B8 ,core::dimension2d<u32> (128*f_w,184*f_h));	
 	
@@ -116,7 +127,50 @@ void sm_init_video(){
 void sm_exit_video(){
     device->drop();
 };
-void sm_set_palette(Bit8u *ptr, unsigned char first_color, unsigned short colors){
+void sm_set_palette(unsigned short pal, unsigned char first_color, unsigned short colors){
+	Bit8u *ptr;
+	
+	switch(pal){
+	case PAL_301F0:
+	case PAL_POPUP:
+		ptr = (Bit8u*)&pal_popup;
+		break;
+	case PAL_MISC:
+		ptr = (Bit8u*)&pal_misc;
+		break;
+	case PAL_30208:
+		ptr = (Bit8u*)&pal_30208;
+		break;
+	case PAL_GGSTS:
+		ptr = (Bit8u*)&pal_ggsts;
+		break;
+	case PAL_30271:
+	case PAL_HEADS:
+		ptr = (Bit8u*)&pal_heads;
+		break;
+	case PAL_GENBG:
+		ptr = (Bit8u*)&pal_genbg;
+		break;
+	case PAL_276E3:
+		ptr = (Bit8u*)&pal_276E3;
+		break;
+//	case PAL_27683:
+//		ptr = (Bit8u*)&pal_27683;//schwarze palette
+//		break;
+	case PAL_0_1F:
+		ptr = (Bit8u*)&pal_0_1F;
+		break;
+	case PAL_GRAY:
+		ptr = (Bit8u*)&pal_gray;
+		break;
+	case PAL_BL:
+		ptr = (Bit8u*)&col_bl;
+		break;
+	case PAL_WH:
+		ptr = (Bit8u*)&col_wh;
+		break;
+	}
+	
 	unsigned short i;
 	for (i = 0; i < colors; i++){
 		gen_palette[first_color+i].r=4*ptr[i*3];
@@ -124,7 +178,14 @@ void sm_set_palette(Bit8u *ptr, unsigned char first_color, unsigned short colors
 		gen_palette[first_color+i].b=4*ptr[i*3+2];
 	};
 };
-
+void sm_set_palette(Bit8u *pal, unsigned char first_color, unsigned short colors){
+	unsigned short i;
+	for (i = 0; i < colors; i++){
+		gen_palette[first_color+i].r=4*pal[i*3];
+		gen_palette[first_color+i].g=4*pal[i*3+1];
+		gen_palette[first_color+i].b=4*pal[i*3+2];
+	};
+}
 bool MyEventReceiver::OnEvent(const irr::SEvent& event){
 	
     if (event.EventType == irr::EET_KEY_INPUT_EVENT)
@@ -588,30 +649,230 @@ fprintf(stdout,"init page: %d\n",n);
 //for (i = 0; i<256; i++) fprintf(stdout,"col: %x, %x, %x\n",gen_palette[i].r,gen_palette[i].g,gen_palette[i].b);
 
 };
-void sm_images_do_typus(unsigned short n)
-{
+void sm_images_do_typus(unsigned short n){
 	unsigned short i;
 	for (i = 0; i<11; i++) smi_dmenge[i].active=false;
 	smi_dmenge[n].active = true;
 };
-void sm_images_do_page(unsigned short n)
-{
+void sm_images_do_page(unsigned short n){
 	smi_page[n].active = true;
 };
-void sm_images_do_heads(unsigned short n, unsigned short x, unsigned short y)
-{
+void sm_images_do_heads(unsigned short n, unsigned short x, unsigned short y){
 	unsigned short i;
 	for (i = 0; i<62; i++) smi_heads[i].active=false;
 	smi_heads[n].active = true;
 	smi_heads[n].pos_in_s = core::position2d<s32>(x*f_w,y*f_h);
 };
-void sm_images_do_sex(unsigned short sex, unsigned short lev)
-{
+void sm_images_do_sex(unsigned short sex, unsigned short lev){
 	smi_sex.active = (sex==1);
 	smi_flecha.active = (lev==1);
 };
 
 
+void sm_index_init(unsigned short n, unsigned short w, unsigned short h, unsigned char* src)
+{
+	video::SColor PixCol(0,0,0,0);
+	unsigned short i,j,col;
+	unsigned short max=0;
+	unsigned short min=0xff;
+
+	for (j = 0; j<h; j++)
+		for (i = 0; i<w; i++){
+			mat[i][j]=readb(src++);
+			if (mat[i][j]<min && mat[i][j]!=0) min=mat[i][j];
+			if (mat[i][j]>max && mat[i][j]!=0xff) max=mat[i][j];
+		}
+	for (j = 0; j<h*f_h; j++) {
+		for (i = 0; i<w*f_w; i++) {
+			find_color((double)i, (double)j,0);
+			dataImage->setPixel(i,j, fi_color, false);
+		}
+	}
+	sprintf(name,"i%d", n);
+	smi_index[n].rec_in_t = core::rect<s32>(0,0,320*f_w,200*f_h); 
+	smi_index[n].pos_in_s = core::position2d<s32>(0,0);
+	smi_index[n].active = false;
+	smi_index[n].dataTexture = driver->addTexture(name,dataImage);
+fprintf(stdout,"init index: %d, Farben %x-%x\n",n,min,max);
+};
+
+
+bool sm_index_inited(unsigned short n){
+	return smi_index[n].dataTexture;
+};
+void sm_index_do(unsigned short n){
+	smi_index[n].active = true;
+};
+
+void sm_icons_init(unsigned char* src){
+	video::SColor PixCol(0,0,0,0);
+	unsigned short i,j,n,col;
+
+	for (n = 0; n<55; n++){
+		for (j = 0; j<24; j++)
+			for (i = 0; i<24; i++)
+				mat[i][j]=readb(src++);
+		for (j = 0; j<24*f_h; j++) {
+			for (i = 0; i<24*f_w; i++) {
+				find_color((double)i, (double)j,0);
+				dataImage24->setPixel(i,j, fi_color, false);
+			}
+		}
+		sprintf(name,"icon%d", n);
+		smt_icons[n] = driver->addTexture(name,dataImage24);
+	}
+};
+
+/* DS:0x2cdd - DS:0x2d01 */
+/* Positions of the icons */
+core::position2d<s32> icon_pos[9] = {
+	core::position2d<s32>(241*f_w,  57*f_h),
+	core::position2d<s32>(268*f_w,  57*f_h),
+	core::position2d<s32>(295*f_w,  57*f_h),
+	core::position2d<s32>(241*f_w,  84*f_h),
+	core::position2d<s32>(268*f_w,  84*f_h),
+	core::position2d<s32>(295*f_w,  84*f_h),
+	core::position2d<s32>(241*f_w, 111*f_h),
+	core::position2d<s32>(268*f_w, 111*f_h),
+	core::position2d<s32>(295*f_w, 111*f_h)};
+
+void sm_bicons_init(unsigned char* src){
+	video::SColor PixCol(0,0,0,0);
+	unsigned short i,j,n,col;
+
+	for (n = 0; n<9; n++){
+		for (j = 0; j<24; j++)
+			for (i = 0; i<24; i++)
+				mat[i][j]=readb(src++);
+		for (j = 0; j<24*f_h; j++) {
+			for (i = 0; i<24*f_w; i++) {
+				find_color((double)i, (double)j,0);
+				dataImage24->setPixel(i,j, fi_color, false);
+			}
+		}
+		sprintf(name,"bicon%d", n);
+		smt_bicons[n] = driver->addTexture(name,dataImage24);
+		
+		smi_icons[n].rec_in_t = core::rect<s32>(0,0,24*f_w,24*f_h); 
+		smi_icons[n].pos_in_s = icon_pos[n];
+		smi_icons[n].active = false;
+		smi_icons[n].dataTexture = smt_bicons[n];
+		
+	}
+};
+
+void sm_do_icon(unsigned short n,signed short m){
+	smi_icons[n].active = true;
+	if (m==-1)
+		smi_icons[n].dataTexture = smt_bicons[n];
+	else
+		smi_icons[n].dataTexture = smt_icons[m];
+};
+
+void sm_images_init_compass(unsigned char* src){
+	video::SColor PixCol(0,0,0,0);
+	unsigned short i,j,n,col;
+
+	for (n = 0; n<4; n++)
+		for (j = 0; j<22; j++)
+			for (i = 0; i<52; i++)
+				mat[i][j+n*22]=readb(src++);
+			
+			
+	for (n = 0; n<4; n++)		
+		for (j = n*22*f_h; j<(n+1)*22*f_h; j++) {
+			for (i = 0; i<52*f_w; i++) {
+				find_color((double)i, (double)j,0);
+				dataImage128->setPixel(i,j, fi_color, false);
+			}
+		}
+	sprintf(name,"compass");
+		
+	smi_compass.rec_in_t = core::rect<s32>(0,0,52*f_w,22*f_h); 
+	smi_compass.pos_in_s = core::position2d<s32>(94,115);
+	smi_compass.active = false;
+	smi_compass.dataTexture = driver->addTexture(name,dataImage128);
+};
+void sm_images_do_compass(unsigned short direction){
+	smi_compass.rec_in_t = core::rect<s32>(0,direction*22*f_h,52*f_w,(direction+1)*22*f_h); 
+	smi_compass.active = true;
+}
+
+
+
+
+void sm_images_init_anis(unsigned short n, unsigned char* src){
+	video::SColor PixCol(0,0,0,0);
+	unsigned short i,j,col;
+	unsigned short h=135;
+	unsigned short w=208;
+
+	for (j = 0; j<h; j++)
+		for (i = 0; i<w; i++){
+			mat[i][j]=readb(src++);
+		}
+	for (j = 0; j<h*f_h; j++) {
+		for (i = 0; i<w*f_w; i++) {
+			find_color((double)i, (double)j,0);
+			dataImage->setPixel(i,j, fi_color, false);
+		}
+	}
+	sprintf(name,"anis%d", n);
+	smi_anis[n].rec_in_t = core::rect<s32>(0,0,w*f_w,h*f_h); 
+	smi_anis[n].pos_in_s = core::position2d<s32>(0,0);
+	smi_anis[n].active = false;
+	smi_anis[n].dataTexture = driver->addTexture(name,dataImage);
+};
+
+void sm_images_do_anis(unsigned short n,unsigned short x,unsigned short y){
+	smi_anis[n].active = true;
+	smi_anis[n].pos_in_s = core::position2d<s32>(x*f_w,y*f_h);
+
+}
+
+void sm_images_init_tempicon(unsigned short n, unsigned char* src){
+	video::SColor PixCol(0,0,0,0);
+	unsigned short i,j,col;
+	unsigned short h=22;
+	unsigned short w=41;
+	for (j = 0; j<h; j++)
+		for (i = 0; i<w; i++){
+			mat[i][j]=readb(src++);
+		}
+	for (j = 0; j<h*f_h; j++) {
+		for (i = 0; i<w*f_w; i++) {
+			find_color((double)i, (double)j,0);
+			dataImage128->setPixel(i,j, fi_color, false);
+		}
+	}
+	sprintf(name,"tempicon%d", n);
+	smi_tempicon[n].rec_in_t = core::rect<s32>(0,0,w*f_w,h*f_h); 
+	smi_tempicon[n].pos_in_s = core::position2d<s32>(99*f_w,90*f_h);
+	smi_tempicon[n].active = false;
+	smi_tempicon[n].dataTexture = driver->addTexture(name,dataImage128);
+};
+void sm_images_do_tempicon(unsigned short n){
+	smi_tempicon[n].active = true;
+};
+
+unsigned short sm_print_loc_line(char *text){
+	sm_clean_text(text);
+	sm_loc_line.pos_in_s = core::rect<s32>(6*f_w,143*f_h,307*f_w,151*f_h);
+
+	const size_t cSize = strlen(text)+1;
+	if (sm_loc_line.text) free(sm_loc_line.text);
+	sm_loc_line.text = (wchar_t*) malloc(2*cSize);
+	mbstowcs (sm_loc_line.text, text, cSize);
+
+	if (! sm_loc_line.dataText){
+		sm_loc_line.dataText = guienv->addStaticText(sm_loc_line.text,sm_loc_line.pos_in_s, false);
+	}else{
+		sm_loc_line.dataText->setRelativePosition(sm_loc_line.pos_in_s);
+		sm_loc_line.dataText->setText(sm_loc_line.text);
+	}
+	sm_loc_line.active = true;
+	return (sm_loc_line.dataText-> getTextHeight()/f_h + 8)/8;
+};
 
 
 
@@ -623,8 +884,8 @@ void sm_images_do_sex(unsigned short sex, unsigned short lev)
 void sm_images_draw_all(bool remain){
 	unsigned short i;
 	driver->beginScene(true, true, video::SColor(255,0,0,0));
-//struct_image smi_sex;
 
+/* gen201 */
 	for (i = 0; i<11; i++) {/* Hintergrund*/
 		if (smi_page[i].active){
 			driver->draw2DImage(smi_page[i].dataTexture, smi_page[i].pos_in_s,
@@ -642,8 +903,6 @@ void sm_images_draw_all(bool remain){
 			smi_flecha.rec_in_t, 0,video::SColor(255,255,255,255), true);
 		smi_flecha.active = remain;
 	}
-
-	
 	for (i = 0; i<14; i++) {/*Typ*/
 		if (smi_dmenge[i].active){
 			driver->draw2DImage(smi_dmenge[i].dataTexture, smi_dmenge[i].pos_in_s,
@@ -658,14 +917,53 @@ void sm_images_draw_all(bool remain){
 			smi_heads[i].active = remain;
 		}
 	}
+/* sm401 */
+	for (i = 0; i<36; i++) {
+		if (smi_anis[i].active){
+			driver->draw2DImage(smi_anis[i].dataTexture, smi_anis[i].pos_in_s,
+				smi_anis[i].rec_in_t, 0,video::SColor(255,255,255,255), true);
+			smi_anis[i].active = remain;
+		}
+	}
+	for (i = 0; i<13; i++) {
+		if (smi_tempicon[i].active){
+			driver->draw2DImage(smi_tempicon[i].dataTexture, smi_tempicon[i].pos_in_s,
+				smi_tempicon[i].rec_in_t, 0,video::SColor(255,255,255,255), true);
+			smi_tempicon[i].active = remain;
+		}
+	}
+	for (i = 0; i<256; i++) {
+		if (smi_index[i].active){
+			driver->draw2DImage(smi_index[i].dataTexture, smi_index[i].pos_in_s,
+				smi_index[i].rec_in_t, 0,video::SColor(255,255,255,255), true);
+			smi_index[i].active = remain;
+		}
+	}
+	for (i = 0; i<9; i++) {
+		if (smi_icons[i].active){
+			driver->draw2DImage(smi_icons[i].dataTexture, smi_icons[i].pos_in_s,
+				smi_icons[i].rec_in_t, 0,video::SColor(255,255,255,255), true);
+			smi_icons[i].active = remain;
+		}
+	}
+	if (smi_compass.active){
+		driver->draw2DImage(smi_compass.dataTexture, smi_compass.pos_in_s,
+			smi_compass.rec_in_t, 0,video::SColor(255,255,255,255), true);
+		smi_compass.active = remain;
+	}
+	
+	
 
-
-
+/* text */
 	for (i = 0; i<50; i++) {
 		if (sm_texts[i].active){
 			sm_texts[i].dataText->draw();
 			sm_texts[i].active = remain;
 		}
+	}
+	if (sm_loc_line.active){
+		sm_loc_line.dataText->draw();
+		sm_loc_line.active = remain;
 	}
 	
 	/*popup*/
